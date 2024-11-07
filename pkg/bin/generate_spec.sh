@@ -27,12 +27,12 @@ for RECIPE_PATH in "$RECIPES_DIR"/*/; do
   SOURCE_URL="https://github.com/ilya-zlobintsev/LACT/archive/refs/tags/v${RECIPE_VERSION}.tar.gz"
 
   # Collect Fedora-specific dependencies safely
-  PKG_DEPENDS=$(yq eval '.depends | with_entries(select(.key | contains("fedora"))) | .[] | join(" ")' "$RECIPE_FILE" | xargs)
-  PKG_BUILD_DEPENDS=$(yq eval '.build_depends | with_entries(select(.key | contains("fedora"))) | .[] | join(" ")' "$RECIPE_FILE" | xargs)
+  PKG_DEPENDS=$(yq eval '.metadata.depends | with_entries(select(.key | contains("fedora"))) | .[] | join(" ")' "$RECIPE_FILE" | xargs)
+  PKG_BUILD_DEPENDS=$(yq eval '.metadata.build_depends | with_entries(select(.key | contains("fedora"))) | .[] | join(" ")' "$RECIPE_FILE" | xargs)
 
   # Include dependencies from the 'all' key if they exist
-  ALL_DEPENDS=$(yq eval 'select(.depends.all != null) | .depends.all | join(" ")' "$RECIPE_FILE" | xargs)
-  ALL_BUILD_DEPENDS=$(yq eval 'select(.build_depends.all != null) | .build_depends.all | join(" ")' "$RECIPE_FILE" | xargs)
+  ALL_DEPENDS=$(yq eval 'select(.metadata.depends.all != null) | .metadata.depends.all | join(" ")' "$RECIPE_FILE" | xargs)
+  ALL_BUILD_DEPENDS=$(yq eval 'select(.metadata.build_depends.all != null) | .metadata.build_depends.all | join(" ")' "$RECIPE_FILE" | xargs)
 
   PKG_DEPENDS="${PKG_DEPENDS} ${ALL_DEPENDS}"
   PKG_BUILD_DEPENDS="${PKG_BUILD_DEPENDS} ${ALL_BUILD_DEPENDS}"
@@ -75,7 +75,6 @@ make install DESTDIR=%{buildroot}
 
 %changelog
 * $(date +"%a %b %d %Y") $MAINTAINER - $RECIPE_VERSION-$RECIPE_RELEASE
-- Initial build
 EOF
 
   echo "Spec file created at $SPEC_FILE"
