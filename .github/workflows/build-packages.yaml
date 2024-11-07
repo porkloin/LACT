@@ -106,12 +106,20 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
       - name: Verify yq installation
         run: yq --version
+      - name: Install rpmlint
+        run: sudo apt-get install -y rpmlint
       - name: Generate spec files for COPR submission
         run: ./pkg/bin/generate_spec.sh
         env:
           GHA_RUN_NUMBER: ${{ github.run_number }}
           GHA_SHA: ${{ github.sha }}
           GHA_REF: ${{ github.ref }}
+      - name: Validate generated spec files
+        run: |
+          for spec_file in pkg/fedora-spec/*.spec; do
+            echo "Validating $spec_file"
+            rpmlint $spec_file || exit 1
+          done
 
   create-release:
     needs: build-packages
