@@ -107,7 +107,7 @@ jobs:
       - name: Verify yq installation
         run: yq --version
       - name: Generate spec files for COPR submission
-        run: ./scripts/generate_spec.sh
+        run: ./pkg/bin/generate_spec.sh
 
   create-release:
     needs: build-packages
