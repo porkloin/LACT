@@ -108,6 +108,10 @@ jobs:
         run: yq --version
       - name: Generate spec files for COPR submission
         run: ./pkg/bin/generate_spec.sh
+        env:
+          GHA_RUN_NUMBER: ${{ github.run_number }}
+          GHA_SHA: ${{ github.sha }}
+          GHA_REF: ${{ github.ref }}
 
   create-release:
     needs: build-packages

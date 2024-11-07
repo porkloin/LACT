@@ -19,19 +19,23 @@ for RECIPE_PATH in "$RECIPES_DIR"/*/; do
   fi
 
   RECIPE_VERSION=$(yq eval '.metadata.version // "0.0.1"' "$RECIPE_FILE")
-  RECIPE_RELEASE=${RECIPE_RELEASE:-1}
+  # Use GHA_RUN_NUMBER or default to 1
+  RECIPE_RELEASE=${GHA_RUN_NUMBER:-1}
   PKG_LICENSE=$(yq eval '.metadata.license // "UNKNOWN"' "$RECIPE_FILE")
   PKG_DESCRIPTION=$(yq eval '.metadata.description // "No description available."' "$RECIPE_FILE")
   MAINTAINER=$(yq eval '.metadata.maintainer // "Unknown Maintainer"' "$RECIPE_FILE")
   SOURCE_URL="https://github.com/ilya-zlobintsev/LACT/archive/refs/tags/v${RECIPE_VERSION}.tar.gz"
 
   # Collect Fedora-specific dependencies safely
-  PKG_DEPENDS=$(yq eval 'select(.depends != null) | (.depends | with_entries(select(.key | test("fedora")))) | .[] // [] | join(", ")' "$RECIPE_FILE" | tr -s ' ' | tr '\n' ' ')
-  PKG_BUILD_DEPENDS=$(yq eval 'select(.build_depends != null) | (.build_depends | with_entries(select(.key | test("fedora")))) | .[] // [] | join(", ")' "$RECIPE_FILE" | tr -s ' ' | tr '\n' ' ')
+  PKG_DEPENDS=$(yq eval 'select(.depends != null) | (.depends | with_entries(select(.key | test("fedora")))) | .[] // [] | join(" ")' "$RECIPE_FILE" | xargs)
+  PKG_BUILD_DEPENDS=$(yq eval 'select(.build_depends != null) | (.build_depends | with_entries(select(.key | test("fedora")))) | .[] // [] | join(" ")' "$RECIPE_FILE" | xargs)
 
-  # Ensure dependencies from the 'all' key are included only if they exist
-  PKG_DEPENDS="$PKG_DEPENDS $(yq eval 'select(.depends.all != null) | .depends.all | join(", ")' "$RECIPE_FILE" | tr -s ' ' | tr '\n' ' ')"
-  PKG_BUILD_DEPENDS="$PKG_BUILD_DEPENDS $(yq eval 'select(.build_depends.all != null) | .build_depends.all | join(", ")' "$RECIPE_FILE" | tr -s ' ' | tr '\n' ' ')"
+  # Include dependencies from the 'all' key if they exist
+  ALL_DEPENDS=$(yq eval 'select(.depends.all != null) | .depends.all | join(" ")' "$RECIPE_FILE" | xargs)
+  ALL_BUILD_DEPENDS=$(yq eval 'select(.build_depends.all != null) | .build_depends.all | join(" ")' "$RECIPE_FILE" | xargs)
+
+  PKG_DEPENDS="${PKG_DEPENDS} ${ALL_DEPENDS}"
+  PKG_BUILD_DEPENDS="${PKG_BUILD_DEPENDS} ${ALL_BUILD_DEPENDS}"
 
   # Trim any leading or trailing whitespace
   PKG_DEPENDS=$(echo "$PKG_DEPENDS" | xargs)
@@ -73,6 +77,6 @@ make install DESTDIR=%{buildroot}
 * $(date +"%a %b %d %Y") $MAINTAINER - $RECIPE_VERSION-$RECIPE_RELEASE
 - Initial build
 EOF
+
   echo "Spec file created at $SPEC_FILE"
-  cat "$SPEC_FILE"
 done
