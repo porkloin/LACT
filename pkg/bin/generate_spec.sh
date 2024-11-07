@@ -79,4 +79,5 @@ make install DESTDIR=%{buildroot}
 EOF
 
   echo "Spec file created at $SPEC_FILE"
+  cat "$SPEC_FILE"
 done
