@@ -98,8 +98,14 @@ jobs:
   generate-spec:
     runs-on: ubuntu-latest
     steps:
-      - name: Install yq (for Fedora spec generation)
-        run: sudo apt-get install -y yq
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install yq
+        run: |
+          sudo curl -L https://github.com/mikefarah/yq/releases/download/v4.34.1/yq_linux_amd64 -o /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
+      - name: Verify yq installation
+        run: yq --version
       - name: Generate spec files for COPR submission
         run: ./scripts/generate_spec.sh
 
