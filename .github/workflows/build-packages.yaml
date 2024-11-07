@@ -7,6 +7,7 @@ on:
 
 jobs:
   build-packages:
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master')
     strategy:
       matrix:
         target-os:
