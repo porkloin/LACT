@@ -73,6 +73,6 @@ make install DESTDIR=%{buildroot}
 * $(date +"%a %b %d %Y") $MAINTAINER - $RECIPE_VERSION-$RECIPE_RELEASE
 - Initial build
 EOF
-
   echo "Spec file created at $SPEC_FILE"
+  cat "$SPEC_FILE"
 done
