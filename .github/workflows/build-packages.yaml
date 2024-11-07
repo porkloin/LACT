@@ -2,15 +2,25 @@ name: Build packages
 
 on:
   push:
-    branches: ['master']
+    branches: ["master"]
   pull_request:
 
 jobs:
   build-packages:
     strategy:
       matrix:
-        target-os: [ debian-12, ubuntu-2204, ubuntu-2404, fedora-39, fedora-40, fedora-41, arch, opensuse-tumbleweed ]
-        recipe: [ lact, lact-headless ]
+        target-os:
+          [
+            debian-12,
+            ubuntu-2204,
+            ubuntu-2404,
+            fedora-39,
+            fedora-40,
+            fedora-41,
+            arch,
+            opensuse-tumbleweed,
+          ]
+        recipe: [lact, lact-headless]
         include:
           - target-os: fedora-39
             recipe: lact-libadwaita
@@ -57,16 +67,16 @@ jobs:
         run: |
           OUT_DIR=$PWD/release-artifacts
           mkdir -p $OUT_DIR
-          
+
           pushd pkg/output
           for DISTRO in $(ls); do
               cd $DISTRO
               rm -f *.src.rpm
-          
+
               for FILE in $(ls); do
                   NAME="${FILE%.*}"
                   EXT="${FILE##*.}"
-          
+
           	OUT_NAME="$OUT_DIR/$NAME.$DISTRO.$EXT"
           	cp $FILE $OUT_NAME
               done 
@@ -87,7 +97,7 @@ jobs:
   create-release:
     needs: build-packages
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    if: (github.event_name == 'push')
 
     steps:
       - name: Checkout repository
@@ -121,4 +131,3 @@ jobs:
           git tag -f test-build
           git push -f origin test-build
         shell: bash
-
