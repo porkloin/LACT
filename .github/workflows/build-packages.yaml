@@ -120,6 +120,25 @@ jobs:
             echo "Validating $spec_file"
             rpmlint $spec_file || exit 1
           done
+      - name: Install copr-cli
+        run: sudo dnf install -y copr-cli
+      - name: Configure copr-cli
+        run: |
+          mkdir -p ~/.config
+          echo "[copr-cli]" > ~/.config/copr
+          echo "username = $COPR_USERNAME" >> ~/.config/copr
+          echo "token = $COPR_API_TOKEN" >> ~/.config/copr
+        env:
+          COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
+          COPR_API_TOKEN: ${{ secrets.COPR_API_TOKEN }}
+      - name: Upload packages to COPR
+        run: |
+          for FILE in pkg/fedora-spec/*.spec; do
+            echo "Uploading $FILE to COPR"
+            copr-cli build ${{ secrets.COPR_PROJECT }} $FILE --chroot fedora-39-x86_64 --chroot fedora-40-x86_64 --chroot fedora-41-x86_64
+          done
+        env:
+          COPR_API_TOKEN: ${{ secrets.COPR_API_TOKEN }}
 
   create-release:
     needs: build-packages
