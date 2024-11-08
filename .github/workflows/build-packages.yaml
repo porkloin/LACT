@@ -120,8 +120,6 @@ jobs:
             echo "Validating $spec_file"
             rpmlint $spec_file || exit 1
           done
-      - name: Install copr-cli
-        run: sudo dnf install -y copr-cli
       - name: Configure copr-cli
         run: |
           mkdir -p ~/.config
