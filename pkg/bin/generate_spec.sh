@@ -52,7 +52,8 @@ License:        $PKG_LICENSE
 URL:            https://github.com/ilya-zlobintsev/LACT
 Source0:        $SOURCE_URL
 
-BuildArch:      x86_64
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+ExclusiveArch:  x86_64
 BuildRequires:  $PKG_BUILD_DEPENDS
 Requires:       $PKG_DEPENDS
 
@@ -66,15 +67,22 @@ $PKG_DESCRIPTION
 make %{?_smp_mflags}
 
 %install
+rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 
+%clean
+rm -rf %{buildroot}
+
 %files
+%defattr(-,root,root,-)
 %license LICENSE
 %doc README.md
 /usr/bin/$RECIPE_NAME
 
 %changelog
 * $(date +"%a %b %d %Y") $MAINTAINER - $RECIPE_VERSION-$RECIPE_RELEASE
+- Initial package version $RECIPE_VERSION
+- Built with release $RECIPE_RELEASE
 EOF
 
   echo "Spec file created at $SPEC_FILE"
