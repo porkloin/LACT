@@ -120,6 +120,15 @@ jobs:
             echo "Validating $spec_file"
             rpmlint $spec_file || exit 1
           done
+      - name: Install copr-cli
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dnf
+      - name: Add COPR repository and install copr-cli
+        run: |
+          sudo dnf install -y 'dnf-command(config-manager)'
+          sudo dnf config-manager --set-enabled fedora
+          sudo dnf install -y copr-cli
       - name: Configure copr-cli
         run: |
           mkdir -p ~/.config
@@ -133,15 +142,7 @@ jobs:
         run: |
           for FILE in pkg/fedora-spec/*.spec; do
             echo "Uploading $FILE to COPR"
-            curl -X POST ${{ secrets.COPR_WEBHOOK_URL }} \
-              -H "Content-Type: application/json" \
-              -d '{
-                    "source": {
-                      "project": "<your-project-name>",
-                      "package": "<package-name>",
-                      "commit": "${{ github.sha }}"
-                    }
-                  }'
+            copr-cli build ${{ secrets.COPR_PROJECT }} $FILE --chroot fedora-39-x86_64 --chroot fedora-40-x86_64 --chroot fedora-41-x86_64
           done
         env:
           COPR_API_TOKEN: ${{ secrets.COPR_API_TOKEN }}
