@@ -95,58 +95,6 @@ jobs:
           name: ${{ matrix.target-os }}
           path: release-artifacts/*
 
-  generate-spec:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Install yq
-        run: |
-          sudo curl -L https://github.com/mikefarah/yq/releases/download/v4.34.1/yq_linux_amd64 -o /usr/local/bin/yq
-          sudo chmod +x /usr/local/bin/yq
-      - name: Verify yq installation
-        run: yq --version
-      - name: Install rpmlint
-        run: sudo apt-get install -y rpmlint
-      - name: Generate spec files for COPR submission
-        run: ./pkg/bin/generate_spec.sh
-        env:
-          GHA_RUN_NUMBER: ${{ github.run_number }}
-          GHA_SHA: ${{ github.sha }}
-          GHA_REF: ${{ github.ref }}
-      - name: Validate generated spec files
-        run: |
-          for spec_file in pkg/fedora-spec/*.spec; do
-            echo "Validating $spec_file"
-            rpmlint $spec_file || exit 1
-          done
-      - name: Install copr-cli
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y dnf
-      - name: Add COPR repository and install copr-cli
-        run: |
-          sudo dnf install -y 'dnf-command(config-manager)'
-          sudo dnf config-manager --set-enabled fedora
-          sudo dnf install -y copr-cli
-      - name: Configure copr-cli
-        run: |
-          mkdir -p ~/.config
-          echo "[copr-cli]" > ~/.config/copr
-          echo "username = $COPR_USERNAME" >> ~/.config/copr
-          echo "token = $COPR_API_TOKEN" >> ~/.config/copr
-        env:
-          COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
-          COPR_API_TOKEN: ${{ secrets.COPR_API_TOKEN }}
-      - name: Upload packages to COPR
-        run: |
-          for FILE in pkg/fedora-spec/*.spec; do
-            echo "Uploading $FILE to COPR"
-            copr-cli build ${{ secrets.COPR_PROJECT }} $FILE --chroot fedora-39-x86_64 --chroot fedora-40-x86_64 --chroot fedora-41-x86_64
-          done
-        env:
-          COPR_API_TOKEN: ${{ secrets.COPR_API_TOKEN }}
-
   create-release:
     needs: build-packages
     runs-on: ubuntu-latest

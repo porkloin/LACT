@@ -6,4 +6,3 @@ AppDir/
 appimage-build/
 *.stignore
 pkg/output
-pkg/fedora-spec
