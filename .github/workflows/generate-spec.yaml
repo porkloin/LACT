@@ -1,22 +1,15 @@
 name: Generate Fedora Spec for COPR
 
 on:
-  push:
-    branches: ["master"]
-  pull_request:
-    types: [opened, synchronize]
-    paths-ignore:
-      - "pkg/fedora-spec/*.spec"
+  release:
+    types: ["published"]
 
 jobs:
   generate-spec:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.head_ref }}
       - name: Install yq
         run: |
           sudo curl -L https://github.com/mikefarah/yq/releases/download/v4.34.1/yq_linux_amd64 -o /usr/local/bin/yq
@@ -28,19 +21,36 @@ jobs:
       - name: Generate spec files
         run: ./pkg/bin/generate_spec.sh
         env:
-          GHA_RUN_NUMBER: ${{ github.run_number }}
-          GHA_SHA: ${{ github.sha }}
-          GHA_REF: ${{ github.ref }}
+          GH_RELEASE_NAME: ${{ github.release.name }}
+          GH_RELEASE_TAG: ${{ github.release.tag_name }}
+          GH_RELEASE_URL: ${{ github.release.html_url }}
       - name: Validate generated spec files
         run: |
           for spec_file in pkg/fedora-spec/*.spec; do
             echo "Validating $spec_file"
             rpmlint $spec_file || exit 1
           done
-      - name: Commit spec files to PR branch
+      - name: Create Branch and Commit Changes
         run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          branch_name="chore/update-spec-files-${{ github.event.release.tag_name }}"
+          git checkout -b $branch_name
           git add pkg/fedora-spec/*.spec
-          git diff --staged --quiet || git commit -m "chore: Update spec files"
-          git push
+          git commit -m "chore: Update spec files for release ${{ github.event.release.tag_name }}"
+          git push origin $branch_name
+      - name: Create Pull Request
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const result = await github.rest.pulls.create({
+              owner,
+              repo,
+              title: `chore: Update spec files for release ${process.env.RELEASE_TAG}`,
+              body: `Automated PR to update spec files following release ${process.env.RELEASE_TAG}`,
+              head: `chore/update-spec-files-${process.env.RELEASE_TAG}`,
+              base: 'master'
+            });
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
